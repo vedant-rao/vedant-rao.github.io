@@ -335,7 +335,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
     <p class="about-bio">Curiosity, a strong eye for patterns, and a love for challenges have all made me a strong problem solver. I enjoy building deep theoretical knowledge, and using my understanding to tackle complex and unfamiliar problems.</p>
     <div class="about-connect-label">Connect</div>
     <div class="about-links">
-      <a class="about-link" href="mailto:vedantharsharao@gmail.com">Email</a>
+      <a class="about-link" id="email-copy" href="#" onclick="copyEmail(event)">Email</a>
       <a class="about-link" href="https://www.linkedin.com/in/vedant-rao-73354b229/" target="_blank" rel="noopener">LinkedIn</a>
       <a class="about-link" href="https://thesidedishbyvedant.blogspot.com/" target="_blank" rel="noopener">The Side Dish</a>
     </div>
@@ -1390,6 +1390,16 @@ document.getElementById('gallery-popup').addEventListener('click', e=>{
   if(e.target === document.getElementById('gallery-popup'))
     document.getElementById('gallery-popup').classList.remove('on');
 });
+
+/* ══ EMAIL COPY ══ */
+function copyEmail(e) {
+  e.preventDefault();
+  navigator.clipboard.writeText('vedantharsharao@gmail.com').then(()=>{
+    const el = document.getElementById('email-copy');
+    el.textContent = 'Copied!';
+    setTimeout(()=>{ el.textContent = 'Email'; }, 2000);
+  });
+}
 
 </script>
 </body>
