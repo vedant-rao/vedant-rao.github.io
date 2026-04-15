@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vedant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--s:#d4683a;--s-dim:#9a5030;--white:#f5ede0;--bg:#0e0b08}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'DM Mono',monospace;cursor:none}
+
+#cursor{position:fixed;z-index:9999;width:6px;height:6px;border-radius:50%;background:var(--s);pointer-events:none;transform:translate(-50%,-50%);transition:width .22s,height .22s,background .22s,border .22s}
+#cursor.hover{width:30px;height:30px;background:transparent;border:1px solid rgba(168,85,48,.6)}
+
+#grain{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:.026;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:180px}
+
+/* ══ LANDING ══ */
+#landing{
+  position:fixed;inset:0;z-index:3;
+  /* transform-origin set by JS per corner */
+  transition:transform .85s cubic-bezier(.6,0,.2,1), opacity .6s ease;
+}
+#landing.zoomed{transform:scale(4);opacity:0;pointer-events:none}
+
+/* canvas inside landing so it zooms with the rings */
+#bg-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+
+#qlines{position:absolute;inset:0;z-index:1;pointer-events:none}
+#qlines::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:linear-gradient(to bottom,transparent 0%,rgba(196,94,50,.08) 25%,rgba(196,94,50,.08) 75%,transparent 100%)}
+#qlines::after{content:'';position:absolute;top:50%;left:0;right:0;height:1px;
+  background:linear-gradient(to right,transparent 0%,rgba(196,94,50,.08) 25%,rgba(196,94,50,.08) 75%,transparent 100%)}
+
+/* CENTRE */
+#centre{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10}
+.name-circle{
+  width:188px;height:188px;border-radius:50%;
+  background:radial-gradient(circle at 40% 36%,#1e1409 0%,#120d08 50%,#070503 100%);
+  border:1px solid rgba(196,94,50,.45);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;
+  box-shadow:0 0 18px rgba(220,90,22,.45),0 0 38px rgba(180,62,14,.22),0 0 65px rgba(130,42,8,.10),inset 0 0 40px rgba(0,0,0,.92);
+  transition:border-color .4s,box-shadow .4s;
+  opacity:0;animation:appear 1.4s .2s cubic-bezier(.4,0,.2,1) forwards
+}
+.name-circle:hover{border-color:rgba(212,104,58,.75);box-shadow:0 0 35px rgba(212,104,58,.45),0 0 70px rgba(180,70,18,.22),0 0 110px rgba(130,45,10,.10),inset 0 0 30px rgba(0,0,0,.75)}
+.name-circle::before{content:'';position:absolute;inset:-11px;border-radius:50%;border:1.5px solid rgba(50,18,5,.92);pointer-events:none}
+.name-circle::after{content:'';position:absolute;inset:-28px;border-radius:50%;border:1px solid rgba(168,85,48,.08);pointer-events:none}
+.name-text{font-family:'Cormorant Garamond',Georgia,serif;font-weight:300;font-size:1.95rem;color:#fff;letter-spacing:.09em;user-select:none;position:relative;z-index:1}
+
+/* CORNERS */
+.corner{position:absolute;z-index:5;cursor:pointer;opacity:0;animation:appear .8s forwards;display:flex;flex-direction:column;align-items:center}
+.corner.tl{top:8vh;left:9vw;animation-delay:.75s}
+.corner.tr{top:8vh;right:9vw;animation-delay:.95s}
+.corner.bl{bottom:9vh;left:9vw;animation-delay:1.15s}
+.corner.br{bottom:9vh;right:9vw;animation-delay:1.35s}
+.corner-mark svg{opacity:.79;transition:opacity .4s;display:block;overflow:visible}
+.corner:hover .corner-mark svg{opacity:1}
+.corner-label{margin-top:.85rem;font-size:11px;letter-spacing:.44em;text-transform:uppercase;color:rgba(212,110,58,.75);transition:color .35s,letter-spacing .45s;white-space:nowrap;text-align:center}
+.corner:hover .corner-label{color:var(--s);letter-spacing:.52em}
+.ca1,.ca2{position:absolute;background:var(--s);opacity:0;transition:opacity .35s}
+.corner:hover .ca1,.corner:hover .ca2{opacity:.35}
+.corner.tl .ca1{top:0;left:0;width:70px;height:1px}.corner.tl .ca2{top:0;left:0;width:1px;height:70px}
+.corner.tr .ca1{top:0;right:0;width:70px;height:1px}.corner.tr .ca2{top:0;right:0;width:1px;height:70px}
+.corner.bl .ca1{bottom:0;left:0;width:70px;height:1px}.corner.bl .ca2{bottom:0;left:0;width:1px;height:70px}
+.corner.br .ca1{bottom:0;right:0;width:70px;height:1px}.corner.br .ca2{bottom:0;right:0;width:1px;height:70px}
+
+/* ══ STREAM VIEW ══ */
+#stream-view{position:fixed;inset:0;z-index:20;opacity:0;pointer-events:none;transition:opacity .5s ease}
+#stream-view.visible{opacity:1;pointer-events:auto}
+
+/* Background canvas for stream — fixed, drawn by JS */
+#stream-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* Scrollable content layer */
+#stream-scroll{position:absolute;inset:0;z-index:2;overflow-y:auto;overflow-x:hidden;padding-top:0}
+
+/* back btn + icon — fixed within stream-view, not scrolling */
+#nav-bar{position:fixed;top:1.4rem;left:2.5rem;z-index:30;display:flex;align-items:center;gap:.6rem}
+
+
+
+
+#stream-icon{display:none}
+
+/* Stream text header */
+.stream-header{padding-top:5.5rem;padding-bottom:1.4rem;text-align:left}
+.content-wrap{max-width:880px;margin:0 auto;padding:0 2.5rem}
+.content-wrap.left-flush{margin:0;max-width:none;padding:0 2.5rem}
+.content-wrap.right-align{margin-left:auto;margin-right:3rem;max-width:500px}
+#header-wrap{padding:0 2.5rem;max-width:880px;margin:0 auto}
+#header-wrap.right-align{margin-left:auto;margin-right:2rem;max-width:420px;padding:0 2rem}
+.stream-eyebrow{font-size:9px;letter-spacing:.42em;text-transform:uppercase;color:rgba(210,100,55,1);margin-bottom:.35rem}
+.stream-title{font-family:'Cormorant Garamond',Georgia,serif;font-weight:300;font-size:clamp(1.6rem,2.8vw,2.3rem);color:#fff;letter-spacing:-.01em;line-height:1.05;margin-bottom:.65rem}
+.stream-desc{font-size:11px;color:rgba(237,229,216,.72);line-height:1.85;max-width:44ch;border-left:1px solid rgba(212,110,58,.28);padding-left:1rem}
+
+/* Two-column layout: BH on left, content pushed right */
+.stream-right-layout{margin-left:42%;padding-right:2rem}
+/* Gallery: tighter */
+.gallery-grid{display:grid;grid-template-columns:45fr 30fr 25fr;gap:.75rem;height:calc(100vh - 220px);min-height:500px}
+/* Build: tighter */
+.build-items .build-item{grid-template-columns:75px 14px 1fr}
+.build-item:not(:last-child)::after{left:calc(75px + 6px)}
+
+/* ══ WORK EXPERIENCE ARC STAGE ══ */
+#arc-stage{position:relative;width:100%;height:calc(100vh - 140px);min-height:380px;overflow:visible}
+#arc-svg{position:fixed;top:0;left:0;pointer-events:none;overflow:visible;z-index:5}
+
+/* arc tooltip */
+#arc-tt{position:fixed;z-index:60;background:rgba(10,7,4,.9);border:1px solid rgba(168,85,48,.2);padding:.75rem .9rem;max-width:260px;pointer-events:none;opacity:0;transition:opacity .2s;border-radius:2px}
+#arc-tt.on{opacity:1}
+.tt-co{font-family:'Cormorant Garamond',Georgia,serif;font-size:.95rem;font-weight:300;color:var(--white);margin-bottom:.15rem}
+.tt-rl{font-size:9px;color:rgba(212,120,65,.85);letter-spacing:.06em;margin-bottom:.5rem}
+.tt-dt{font-size:10px;color:rgba(237,229,216,.68);line-height:1.7}
+
+/* ══ LEARNING GRAPH ══ */
+#learn-stage{position:relative;width:100%;height:calc(100vh - 180px);min-height:380px}
+#learn-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.learn-node{position:absolute;transform:translate(-50%,-50%);cursor:default;padding:0 4px;display:block;visibility:visible}
+.learn-label{font-family:'Cormorant Garamond',Georgia,serif;font-size:.82rem;font-weight:300;color:rgba(237,220,195,.65);letter-spacing:.03em;white-space:nowrap;transition:color .3s,font-weight .3s}
+.learn-node.branch .learn-label{font-size:.96rem;color:rgba(245,220,180,.88)}
+.learn-node.lit .learn-label{color:#fff;font-weight:500;text-shadow:0 0 18px rgba(212,104,58,.55)}
+.learn-node.lit-soft .learn-label{color:rgba(245,237,224,.8);font-weight:400}
+
+/* ══ CREATIVITY GALLERY ══ */
+.gallery-wrap{padding:0}
+.gallery-col-mid{display:flex;flex-direction:column;gap:.75rem;height:100%}
+.gallery-col-sm{display:flex;flex-direction:column;gap:.75rem;height:100%}
+.gallery-frame.hero{height:100%}
+.gallery-frame.mid{flex:1;min-height:0}
+.gallery-frame.small{flex:1;min-height:0}
+.gallery-grid{display:grid;grid-template-columns:45fr 30fr 25fr;gap:.75rem;height:calc(100vh - 220px);min-height:500px}
+.gallery-frame{position:relative;border:1px solid rgba(212,104,58,.35);overflow:hidden;transition:border-color .35s;cursor:pointer}
+.gallery-frame:hover{border-color:rgba(212,104,58,.85)}
+.frame-inner{padding:1.3rem;background:rgba(168,85,48,.03);display:flex;flex-direction:column;justify-content:flex-end}
+.gallery-frame.large .frame-inner{min-height:300px}
+.gallery-frame.small .frame-inner{min-height:142px}
+.frame-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;letter-spacing:.18em;color:rgba(237,229,216,.08);text-transform:uppercase}
+.frame-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:.96rem;font-weight:300;color:#fff;position:relative;z-index:1}
+.frame-sub{font-size:9px;letter-spacing:.1em;color:rgba(212,110,58,.78);text-transform:uppercase;margin-top:.2rem;position:relative;z-index:1}
+.frame-geo{position:absolute;top:.75rem;right:.75rem;opacity:.26}
+.gallery-side{display:flex;flex-direction:column;gap:1rem}
+
+/* ══ ENTREPRENEURSHIP TIMELINE ══ */
+.build-wrap{padding:0 0 2.5rem 0}
+.build-section{margin-bottom:2.5rem}
+.build-section-title{padding-top:1.4rem;font-size:9px;letter-spacing:.38em;text-transform:uppercase;color:rgba(212,120,65,.95);margin-bottom:1.4rem;display:flex;align-items:center;gap:.7rem}
+.build-section-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(212,110,58,.38),transparent)}
+.build-items{display:flex;flex-direction:column}
+.build-item{display:grid;grid-template-columns:82px 14px 1fr;padding-bottom:1.6rem;position:relative}
+.build-item:not(:last-child)::after{content:'';position:absolute;left:calc(82px + 6px);top:10px;bottom:0;width:1px;background:rgba(168,85,48,.38)}
+.build-date{font-size:8.5px;color:rgba(212,120,65,.7);letter-spacing:.05em;padding-top:3px;text-align:right;line-height:1.4}
+.build-dot-col{display:flex;justify-content:center;padding-top:3px}
+.build-dot{width:7px;height:7px;border-radius:50%;background:rgba(168,85,48,.32);border:1.5px solid rgba(10,7,4,.9);outline:1px solid rgba(168,85,48,.32);flex-shrink:0}
+.build-item.accent .build-dot{background:var(--s);outline-color:var(--s)}
+.build-body{padding-left:.9rem;padding-top:1px}
+.build-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:.95rem;font-weight:300;color:var(--white);line-height:1.2;margin-bottom:.22rem}
+.build-desc{font-size:10px;color:rgba(237,229,216,.65);line-height:1.75}
+
+/* ABOUT */
+#about-panel{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s;background:rgba(7,5,3,.54);backdrop-filter:blur(6px)}
+#about-panel.on{opacity:1;pointer-events:auto}
+.about-card{width:min(700px,92vw);background:#0f0c09;border:1px solid rgba(168,85,48,.18);border-radius:3px;padding:2rem 2rem 1.7rem;position:relative}
+.about-close{position:absolute;top:.9rem;right:.9rem;width:24px;height:24px;border:1px solid rgba(168,85,48,.24);border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--s);font-size:12px;transition:border-color .2s}
+.about-close:hover{border-color:var(--s)}
+.about-name{font-family:'Cormorant Garamond',Georgia,serif;font-size:2.6rem;font-weight:400;color:var(--white);margin-bottom:.22rem}
+.about-tagline{font-size:9px;color:var(--s);letter-spacing:.2em;text-transform:uppercase;margin-bottom:.5rem}
+.about-meta{display:flex;flex-direction:column;gap:.3rem;font-size:8.5px;color:rgba(237,229,216,.28);letter-spacing:.22em;text-transform:uppercase;margin-bottom:1.4rem;line-height:1.6}
+.about-photo{width:110px;height:110px;border-radius:50%;border:1px solid rgba(168,85,48,.22);background:rgba(168,85,48,.08);display:flex;align-items:center;justify-content:center;margin:0 auto 1.3rem;font-size:9px;color:rgba(237,229,216,.18);letter-spacing:.1em}
+.about-bio{font-size:13px;color:rgba(237,229,216,.38);line-height:1.85;text-align:center;margin-bottom:1.3rem}
+.about-connect-label{font-size:8px;letter-spacing:.34em;text-transform:uppercase;color:var(--s-dim);margin-bottom:.55rem}
+.about-links{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.about-link{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(237,229,216,.4);border:1px solid rgba(168,85,48,.15);padding:.28rem .7rem;border-radius:2px;cursor:pointer;text-decoration:none;transition:border-color .2s,color .2s}
+.about-link:hover{border-color:var(--s);color:var(--white)}
+.about-location{font-size:9px;color:rgba(237,229,216,.16);text-align:center}
+
+@keyframes appear{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+#attribution{position:absolute;bottom:1.2rem;left:50%;transform:translateX(-50%);transition:opacity .2s;z-index:100;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.22em;color:rgba(245,237,224,.28);text-decoration:none;white-space:nowrap;transition:color .3s}
+#attribution:hover{color:rgba(245,237,224,.6)}
+#landing.zoomed #attribution{opacity:0;pointer-events:none}
+/* ══ BRIGHT MODE ══ */
+.bright .corner-label{color:rgba(255,160,80,.95)!important;letter-spacing:.52em}
+.bright .corner-mark svg{opacity:1!important}
+.bright .corner-mark svg line,.bright .corner-mark svg polyline,.bright .corner-mark svg path,.bright .corner-mark svg rect,.bright .corner-mark svg circle{stroke:#ff9944!important;fill-opacity:.9!important}
+.bright .name-text{color:#ffffff!important;text-shadow:0 0 20px rgba(255,160,80,.6)}
+.bright .name-circle{border-color:rgba(255,160,80,.9)!important;box-shadow:0 0 30px rgba(255,140,60,.4),0 0 60px rgba(200,100,30,.2),inset 0 0 30px rgba(0,0,0,.75)!important}
+.bright .name-circle::before{border-color:rgba(180,80,20,.8)!important}
+.bright .learn-label{color:rgba(255,220,160,.85)!important}
+.bright .learn-node.lit .learn-label{color:#fff!important;text-shadow:0 0 12px rgba(255,160,80,.7)}
+.bright .learn-node.lit-soft .learn-label{color:rgba(255,210,150,.9)!important}
+.bright .frame-title{color:#ffffff!important;text-shadow:0 0 8px rgba(255,160,80,.3)}
+.bright .frame-sub{color:rgba(255,180,100,.9)!important}
+.bright .gallery-frame{border-color:rgba(255,140,60,.55)!important}
+.bright .build-title{color:#ffffff!important}
+.bright .build-desc{color:rgba(255,220,180,.7)!important}
+.bright .build-date{color:rgba(255,160,80,.8)!important}
+.bright .tt-co{color:#ffffff!important}
+.bright .tt-rl{color:rgba(255,160,80,.9)!important}
+.bright .tt-dt{color:rgba(255,220,180,.75)!important}
+.bright .stream-title{color:#ffffff!important;text-shadow:0 0 15px rgba(255,140,60,.2)}
+.bright .stream-eyebrow{color:rgba(255,160,80,.95)!important}
+.bright .stream-desc{color:rgba(255,220,180,.7)!important}
+</style>
+</head>
+<body>
+<div id="grain"></div>
+<div id="cursor"></div>
+
+<!-- LANDING -->
+<div id="landing">
+  <canvas id="bg-canvas"></canvas>
+  <div id="qlines"></div>
+  <div id="centre">
+    <div class="name-circle" id="name-circle"><span class="name-text">Vedant</span></div>
+  </div>
+
+  <!-- TL: Learning -->
+  <div class="corner tl" data-stream="learning" id="c-learning">
+    <div class="corner-mark">
+      <svg width="138" height="112" viewBox="0 0 120 100" fill="none" overflow="visible">
+        <polyline id="chev1" points="10,16 60,56 110,16" stroke="#a85530" stroke-width="1.4" fill="none" stroke-linejoin="round"/>
+        <polyline id="chev2" points="10,34 60,74 110,34" stroke="#a85530" stroke-width="1.4" fill="none" stroke-linejoin="round"/>
+        <polyline id="chev3" points="10,52 60,92 110,52" stroke="#a85530" stroke-width="1.4" fill="none" stroke-linejoin="round"/>
+        <polyline id="chev4" points="10,70 60,110 110,70" stroke="#a85530" stroke-width="1.4" fill="none" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="corner-label">Learning</div>
+    <div class="ca1"></div><div class="ca2"></div>
+  </div>
+
+  <!-- TR: Work Experience -->
+  <div class="corner tr" data-stream="work" id="c-work">
+    <div class="corner-mark">
+      <svg width="138" height="112" viewBox="0 0 108 88" fill="none" overflow="visible">
+        <line x1="6" y1="22" x2="78" y2="22" stroke="#a85530" stroke-width="1.2"/>
+        <circle id="ei-c1" cx="22" cy="17" r="5" stroke="#a85530" stroke-width="1" fill="rgba(14,11,8,.9)"/>
+        <line x1="18" y1="42" x2="100" y2="42" stroke="#a85530" stroke-width="1.2"/>
+        <circle id="ei-c2" cx="52" cy="37" r="5" stroke="#a85530" stroke-width="1" fill="rgba(14,11,8,.9)"/>
+        <line x1="4" y1="62" x2="86" y2="62" stroke="#a85530" stroke-width="1.2"/>
+        <circle id="ei-c3" cx="68" cy="57" r="5" stroke="#a85530" stroke-width="1" fill="rgba(14,11,8,.9)"/>
+        <line x1="12" y1="80" x2="96" y2="80" stroke="#a85530" stroke-width="1.2"/>
+        <circle id="ei-c4" cx="80" cy="75" r="5" stroke="#a85530" stroke-width="1" fill="rgba(14,11,8,.9)"/>
+      </svg>
+    </div>
+    <div class="corner-label">Work Experience</div>
+    <div class="ca1"></div><div class="ca2"></div>
+  </div>
+
+  <!-- BL: Creativity -->
+  <div class="corner bl" data-stream="creativity" id="c-creativity">
+    <div class="corner-mark">
+      <svg id="cre-svg" width="138" height="112" viewBox="0 0 108 88" fill="none" overflow="visible">
+        <path id="cre-outer" d="M 6 36 L 102 36" stroke="#a85530" stroke-width="1.3" fill="none"/>
+        <path id="cre-mid"   d="M 6 44 L 102 44" stroke="#a85530" stroke-width="1.3" fill="none"/>
+        <path id="cre-inner" d="M 6 52 L 102 52" stroke="#a85530" stroke-width="1.3" fill="none"/>
+        <circle id="cre-tl" cx="6"   cy="44" r="2.2" fill="#a85530" opacity="0"/>
+        <circle id="cre-tr" cx="102" cy="44" r="2.2" fill="#a85530" opacity="0"/>
+        <circle id="cre-pu" cx="54"  cy="44" r="3.2" fill="#a85530" opacity="0"/>
+      </svg>
+    </div>
+    <div class="corner-label">Creativity</div>
+    <div class="ca1"></div><div class="ca2"></div>
+  </div>
+
+  <!-- BR: Entrepreneurship -->
+  <div class="corner br" data-stream="entrepreneurship" id="c-build">
+    <div class="corner-mark">
+      <svg width="138" height="112" viewBox="0 0 108 88" fill="none">
+        <rect x="4"  y="4"  width="22" height="22" stroke="#a85530" stroke-width=".9" fill="#a85530" fill-opacity=".48"/>
+        <rect x="30" y="4"  width="22" height="22" stroke="#a85530" stroke-width=".9" fill="#a85530" fill-opacity=".48"/>
+        <rect x="56" y="4"  width="22" height="22" stroke="#a85530" stroke-width=".9" fill="#a85530" fill-opacity=".48"/>
+        <rect x="82" y="4"  width="22" height="22" stroke="#a85530" stroke-width=".9" fill="none"/>
+        <rect x="4"  y="30" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="#a85530" fill-opacity=".48"/>
+        <rect x="30" y="30" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="none"/>
+        <rect x="56" y="30" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="none"/>
+        <rect x="82" y="30" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="none"/>
+        <rect x="4"  y="56" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="none"/>
+        <rect x="30" y="56" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="none"/>
+        <rect x="56" y="56" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="none"/>
+        <rect x="82" y="56" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="none"/>
+        <rect id="bb1" x="82" y="4"  width="22" height="22" fill="#a85530" fill-opacity=".48" stroke="none" opacity="0" style="transition:opacity .45s 0s"/>
+        <rect id="bb2" x="30" y="30" width="22" height="22" fill="#a85530" fill-opacity=".48" stroke="none" opacity="0" style="transition:opacity .45s .18s"/>
+        <rect id="bb3" x="56" y="30" width="22" height="22" fill="#a85530" fill-opacity=".48" stroke="none" opacity="0" style="transition:opacity .45s .36s"/>
+        <rect id="bb4" x="82" y="30" width="22" height="22" fill="#a85530" fill-opacity=".48" stroke="none" opacity="0" style="transition:opacity .45s .54s"/>
+      </svg>
+    </div>
+    <div class="corner-label">Entrepreneurship</div>
+    <div class="ca1"></div><div class="ca2"></div>
+  </div>
+  <a id="attribution" href="https://www.vadehraart.com/artists/63-s.h.-raza/" target="_blank" rel="noopener">Art inspired by SH Raza</a>
+</div><!-- /landing -->
+
+<!-- ABOUT -->
+<div id="about-panel">
+  <div class="about-card">
+    <div class="about-close" id="about-close">✕</div>
+    <div class="about-name">Vedant Harsha Rao</div>
+    <div class="about-tagline">Curious &middot; Driven &middot; Builder</div>
+    <div class="about-photo">Photo</div>
+    <div class="about-meta"><span>Mathematics &middot; UC San Diego</span><span>3.964 GPA &middot; June 2026</span></div>
+    <p class="about-bio">Curiosity, a strong eye for patterns, and a love for challenges have all made me a strong problem solver. I enjoy building deep theoretical knowledge, and using my understanding to tackle complex and unfamiliar problems.</p>
+    <div class="about-connect-label">Connect</div>
+    <div class="about-links">
+      <a class="about-link" href="mailto:vedantharsharao@gmail.com">Email</a>
+      <a class="about-link" href="https://www.linkedin.com/in/vedant-rao-73354b229/" target="_blank" rel="noopener">LinkedIn</a>
+      <a class="about-link" href="https://thesidedishbyvedant.blogspot.com/" target="_blank" rel="noopener">The Side Dish</a>
+    </div>
+    <div class="about-location">San Diego, CA</div>
+  </div>
+</div>
+
+<!-- ARC TOOLTIP -->
+<div id="arc-tt">
+  <div class="tt-co" id="tt-co"></div>
+  <div class="tt-rl" id="tt-rl"></div>
+  <div class="tt-dt" id="tt-dt"></div>
+</div>
+
+<!-- STREAM VIEW -->
+<div id="stream-view">
+  <canvas id="stream-canvas"></canvas>
+  <div id="stream-scroll">
+    <div id="nav-bar">
+      <div id="stream-icon"></div>
+    </div>
+    <div id="header-wrap"><div class="stream-header">
+      <p class="stream-eyebrow" id="s-eyebrow"></p>
+      <h1 class="stream-title"  id="s-title"></h1>
+      <p class="stream-desc"    id="s-desc"></p>
+    </div>
+    </div>
+    <div id="stream-body"></div>
+  </div>
+</div>
+
+<script>
+/* ══ CURSOR ══ */
+const cur = document.getElementById('cursor');
+document.addEventListener('mousemove', e => { cur.style.left=e.clientX+'px'; cur.style.top=e.clientY+'px'; });
+const ho = () => cur.classList.add('hover');
+const hx = () => cur.classList.remove('hover');
+
+/* ══ LANDING CANVAS ══ */
+const bgC = document.getElementById('bg-canvas');
+const bgX = bgC.getContext('2d');
+let W, H, t = 0;
+function resizeBg() { W = bgC.width = window.innerWidth; H = bgC.height = window.innerHeight; }
+window.addEventListener('resize', resizeBg); resizeBg();
+
+// ── PARTICLES ──
+// Light particles that spiral slowly toward the black hole
+const PARTICLES = Array.from({length:160}, (_,i) => ({
+  angle: Math.random() * Math.PI * 2,
+  r: 94 + Math.random() * 90,          // tight orbit — just outside event horizon
+  speed: 0.002 + Math.random() * 0.005, // faster orbital speed close in
+  drift: 0.06 + Math.random() * 0.12,   // faster inward drift
+  size: 0.3 + Math.random() * 1.1,
+  opacity: 0.25 + Math.random() * 0.65,
+  flicker: Math.random() * Math.PI * 2,
+  flickerSpeed: 0.03 + Math.random() * 0.08,
+  hue: Math.random() < 0.6 ? 'warm' : 'hot'
+}));
+
+function drawBg() {
+  t += 0.006;
+  bgX.clearRect(0,0,W,H);
+  const cx=W/2, cy=H/2;
+
+  // Background
+  const bg=bgX.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*.85);
+  bg.addColorStop(0,'#221408');bg.addColorStop(.35,'#150e06');bg.addColorStop(.72,'#0d0a05');bg.addColorStop(1,'#070503');
+  bgX.fillStyle=bg;bgX.fillRect(0,0,W,H);
+
+  const gA=.28+Math.sin(t*.9)*.07;
+
+  // ── MASSIVE outer glow — gravitational lensing feel ──
+  const glOuter=bgX.createRadialGradient(cx,cy,80,cx,cy,320);
+  glOuter.addColorStop(0,`rgba(200,75,18,${gA*.9})`);
+  glOuter.addColorStop(.4,`rgba(160,50,10,${gA*.45})`);
+  glOuter.addColorStop(.75,`rgba(100,28,5,${gA*.15})`);
+  glOuter.addColorStop(1,'transparent');
+  bgX.fillStyle=glOuter;bgX.fillRect(0,0,W,H);
+
+  // ── Hot inner corona — white-orange intense centre ──
+  const glHot=bgX.createRadialGradient(cx,cy-10,0,cx,cy+4,90);
+  glHot.addColorStop(0,`rgba(255,200,100,${gA*1.1})`);
+  glHot.addColorStop(.18,`rgba(255,140,45,${gA*.95})`);
+  glHot.addColorStop(.45,`rgba(220,80,18,${gA*.6})`);
+  glHot.addColorStop(.75,`rgba(160,40,8,${gA*.2})`);
+  glHot.addColorStop(1,'transparent');
+  bgX.fillStyle=glHot;bgX.fillRect(0,0,W,H);
+
+  // ── Mid corona ──
+  const gl=bgX.createRadialGradient(cx,cy-12,0,cx,cy+4,148);
+  gl.addColorStop(0,`rgba(220,90,22,${gA*.6})`);
+  gl.addColorStop(.42,`rgba(155,55,14,${gA*.2})`);
+  gl.addColorStop(1,'transparent');
+  bgX.fillStyle=gl;bgX.fillRect(0,0,W,H);
+
+  // ── Concentric rings ──
+  [{r:104,b:.58,f:1.0,p:0},{r:120,b:.28,f:.88,p:.35},{r:180,b:.18,f:.70,p:.85},
+   {r:260,b:.12,f:.55,p:1.5},{r:360,b:.082,f:.42,p:2.2},{r:480,b:.060,f:.32,p:3.0}].forEach(r=>{
+    const a=r.b+Math.sin(t*r.f+r.p)*r.b*.25;
+    bgX.beginPath();bgX.arc(cx,cy,r.r,0,Math.PI*2);
+    bgX.strokeStyle=`rgba(210,90,38,${a})`;bgX.lineWidth=.9;bgX.stroke();
+  });
+
+  // ── Light particles spiraling inward ──
+  PARTICLES.forEach(p => {
+    // Spiral inward
+    p.angle += p.speed;
+    p.r -= p.drift;
+    // Reset when sucked in
+    if(p.r < 88) {
+      p.r = 94 + Math.random() * 90;
+      p.angle = Math.random() * Math.PI * 2;
+      p.opacity = 0.25 + Math.random() * 0.65;
+    }
+    // Fade as they get close to event horizon
+    const proximity = Math.max(0, (p.r - 88) / 100);
+    const flicker = 0.7 + 0.3 * Math.sin(t * p.flickerSpeed * 60 + p.flicker);
+    const alpha = p.opacity * proximity * flicker;
+    if(alpha < 0.01) return;
+
+    const px = cx + p.r * Math.cos(p.angle);
+    const py = cy + p.r * Math.sin(p.angle);
+
+    // Colour: warm orange close to BH, lighter further out
+    const heat = 1 - proximity;
+    const r = Math.round(200 + heat * 55);
+    const g = Math.round(70 + heat * 80);
+    const b = Math.round(10 + heat * 20);
+
+    bgX.beginPath();
+    bgX.arc(px, py, p.size, 0, Math.PI * 2);
+    bgX.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+    bgX.fill();
+
+    // Tiny tail in direction of orbit
+    if(p.size > 0.8) {
+      const tailX = px - Math.cos(p.angle + Math.PI/2) * p.size * 3;
+      const tailY = py - Math.sin(p.angle + Math.PI/2) * p.size * 3;
+      bgX.beginPath();
+      bgX.moveTo(px, py);
+      bgX.lineTo(tailX, tailY);
+      bgX.strokeStyle = `rgba(${r},${g},${b},${alpha * 0.4})`;
+      bgX.lineWidth = p.size * 0.6;
+      bgX.stroke();
+    }
+  });
+
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+/* ══ STREAM BG CANVAS ══
+   Draws: dark bg, quarter-circle arcs from active corner, partial black hole in corner
+*/
+const sC = document.getElementById('stream-canvas');
+const sX = sC.getContext('2d');
+let sW, sH;
+// corner config: screen pixel origin of each corner
+const CORNER_ORIGINS = {
+  'tl': () => ({x:sW,  y:sH}),  // zoomed TL → black hole at BR
+  'tr': () => ({x:0,   y:sH}),  // zoomed TR → black hole at BL
+  'bl': () => ({x:sW,  y:0}),   // zoomed BL → black hole at TR
+  'br': () => ({x:0,   y:0}),   // zoomed BR → black hole at TL
+};
+let activeCorner = 'tr';
+
+function resizeStream() {
+  sW = sC.width  = window.innerWidth;
+  sH = sC.height = window.innerHeight;
+  drawStreamBg();
+}
+window.addEventListener('resize', resizeStream);
+
+function drawStreamBg() {
+  sX.clearRect(0,0,sW,sH);
+
+  // Match landing background exactly
+  const bgGrad=sX.createRadialGradient(sW/2,sH/2,0,sW/2,sH/2,Math.max(sW,sH)*.85);
+  bgGrad.addColorStop(0,'#191108');bgGrad.addColorStop(.4,'#110c06');bgGrad.addColorStop(.75,'#0c0905');bgGrad.addColorStop(1,'#070503');
+  sX.fillStyle=bgGrad;sX.fillRect(0,0,sW,sH);
+
+  // BH centre at corner — 2x the landing circle radius (landing: 94px, here: ~188px equiv scaled)
+  const {x:ox,y:oy} = CORNER_ORIGINS[activeCorner]();
+  const bx = ox===0 ? 0 : sW;
+  const by = oy===0 ? 0 : sH;
+  // Landing circle radius = 94px. After 2x = 188px. Scale by screen size.
+  const bhR = Math.min(sW,sH) * 0.36;
+  const isWork = (activeCorner === 'tr');
+
+  // Warm glow matching landing — same colour, tight radius
+  const glowA = 0.38;
+  const gl = sX.createRadialGradient(bx, by, 0, bx, by, bhR*2.2);
+  gl.addColorStop(0, `rgba(220,90,22,${glowA})`);
+  gl.addColorStop(.3, `rgba(180,60,14,${glowA*.5})`);
+  gl.addColorStop(.65,`rgba(120,35,8,${glowA*.15})`);
+  gl.addColorStop(1,'transparent');
+  sX.fillStyle=gl; sX.fillRect(0,0,sW,sH);
+
+  // Concentric rings — same proportions as landing
+  const rings = [
+    {r:bhR*1.11, a:.42, lw:1.8},
+    {r:bhR*1.28, a:.16, lw:1.4},
+    {r:bhR*1.91, a: isWork?.10:.032, lw:1.1},
+    {r:bhR*2.77, a: isWork?.078:.015, lw:.90},
+    {r:bhR*3.83, a: isWork?.060:.006, lw:.78},
+    {r:bhR*5.11, a: isWork?.046:.002, lw:.65},
+  ];
+  rings.forEach(({r,a,lw})=>{
+    sX.beginPath();sX.arc(bx,by,r,0,Math.PI*2);
+    sX.strokeStyle=`rgba(200,82,22,${a})`;sX.lineWidth=lw;sX.stroke();
+  });
+
+  // Corona — bright inner halo matching landing box-shadow glow
+  // Landing: box-shadow 0 0 22px rgba(160,72,20,.2), 0 0 42px rgba(120,48,10,.08)
+  const corona = sX.createRadialGradient(bx,by,bhR*.55,bx,by,bhR*2.2);
+  corona.addColorStop(0,  isWork ? 'rgba(220,90,22,.42)' : 'rgba(200,82,22,.28)');
+  corona.addColorStop(.4, isWork ? 'rgba(170,60,16,.20)' : 'rgba(155,60,14,.12)');
+  corona.addColorStop(1,  'transparent');
+  sX.fillStyle=corona; sX.fillRect(0,0,sW,sH);
+
+  // Black hole fill — match landing circle gradient exactly
+  const focalOffX = (bx===0 ? 1 : -1) * bhR * 0.25;
+  const focalOffY = (by===0 ? 1 : -1) * bhR * 0.30;
+  const bhg=sX.createRadialGradient(bx+focalOffX, by+focalOffY, 0, bx, by, bhR*1.1);
+  bhg.addColorStop(0,'#1e1409');
+  bhg.addColorStop(.52,'#120d08');
+  bhg.addColorStop(.88,'#070503');
+  bhg.addColorStop(1,'transparent');
+  sX.fillStyle=bhg;sX.fillRect(0,0,sW,sH);
+
+  // Inner glow — matches landing animated glow rgba(200,82,22)
+  const innerGlow = sX.createRadialGradient(bx+focalOffX, by+focalOffY, 0, bx, by, bhR*0.85);
+  innerGlow.addColorStop(0, 'rgba(200,82,22,.22)');
+  innerGlow.addColorStop(.45,'rgba(155,55,14,.09)');
+  innerGlow.addColorStop(1, 'transparent');
+  sX.fillStyle=innerGlow;sX.fillRect(0,0,sW,sH);
+
+  // Inner border ring (matches name-circle border: rgba(196,94,50,.45))
+  sX.beginPath();sX.arc(bx,by,bhR,0,Math.PI*2);
+  sX.strokeStyle='rgba(196,94,50,.45)';sX.lineWidth=1.5;sX.stroke();
+  // Deep-brown ring (matches name-circle::before: rgba(50,18,5,.92))
+  sX.beginPath();sX.arc(bx,by,bhR*1.12,0,Math.PI*2);
+  sX.strokeStyle='rgba(50,18,5,.92)';sX.lineWidth=2.5;sX.stroke();
+  // Faint outer ring (matches name-circle::after: rgba(200,82,22,.08))
+  sX.beginPath();sX.arc(bx,by,bhR*1.30,0,Math.PI*2);
+  sX.strokeStyle='rgba(200,82,22,.10)';sX.lineWidth=1;sX.stroke();
+
+  // Store for arc use
+  window._bh = {bx, by, bhR};
+}
+
+/* ══ LEARNING CHEVRON ANIMATION ══
+   All 3 points of each chevron converge to bottom chevron's points on close.
+   Bottom chevron (chev4): left=(10,70) mid=(60,110) right=(110,70) — these are the targets.
+*/
+const CHEVS = [
+  {id:'chev1',lx:10,ly:16,mx:60,my:56,rx:110,ry:16},
+  {id:'chev2',lx:10,ly:34,mx:60,my:74,rx:110,ry:34},
+  {id:'chev3',lx:10,ly:52,mx:60,my:92,rx:110,ry:52},
+  {id:'chev4',lx:10,ly:70,mx:60,my:110,rx:110,ry:70},
+];
+const CA = {lx:10,ly:70,mx:60,my:110,rx:110,ry:70}; // anchor (bottom chevron)
+let chevP=0, chevAId=null;
+
+function animChevs(closing) {
+  if(chevAId) cancelAnimationFrame(chevAId);
+  const from=chevP, to=closing?1:0, dur=500, st=performance.now();
+  (function step(now) {
+    const p=Math.min((now-st)/dur,1), e=p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+    chevP=from+(to-from)*e;
+    CHEVS.forEach(c=>{
+      const el=document.getElementById(c.id); if(!el) return;
+      const lx=c.lx+(CA.lx-c.lx)*chevP, ly=c.ly+(CA.ly-c.ly)*chevP;
+      const mx=c.mx+(CA.mx-c.mx)*chevP, my=c.my+(CA.my-c.my)*chevP;
+      const rx=c.rx+(CA.rx-c.rx)*chevP, ry=c.ry+(CA.ry-c.ry)*chevP;
+      el.setAttribute('points',`${lx.toFixed(1)},${ly.toFixed(1)} ${mx.toFixed(1)},${my.toFixed(1)} ${rx.toFixed(1)},${ry.toFixed(1)}`);
+    });
+    if(p<1) chevAId=requestAnimationFrame(step);
+  })(performance.now());
+}
+
+document.getElementById('c-learning').addEventListener('mouseenter',()=>{ ho(); animChevs(true); });
+document.getElementById('c-learning').addEventListener('mouseleave',()=>{ hx(); animChevs(false); });
+
+/* ══ WORK ICON — circles roll ══ */
+const wc=document.getElementById('c-work');
+const eiD=[{id:'ei-c1',o:22,h:42},{id:'ei-c2',o:52,h:59},{id:'ei-c3',o:68,h:45},{id:'ei-c4',o:80,h:54}];
+wc.addEventListener('mouseenter',()=>{ ho(); eiD.forEach((d,i)=>{const el=document.getElementById(d.id);el.style.transition=`cx ${.55+i*.07}s cubic-bezier(.4,0,.2,1)`;el.setAttribute('cx',d.h);}); });
+wc.addEventListener('mouseleave',()=>{ hx(); eiD.forEach((d,i)=>{const el=document.getElementById(d.id);el.style.transition=`cx ${.45+i*.06}s cubic-bezier(.4,0,.2,1)`;el.setAttribute('cx',d.o);}); });
+
+/* ══ CREATIVITY — eye glides ══ */
+const cc=document.getElementById('c-creativity');
+const cE={o:document.getElementById('cre-outer'),m:document.getElementById('cre-mid'),i:document.getElementById('cre-inner'),tl:document.getElementById('cre-tl'),tr:document.getElementById('cre-tr'),p:document.getElementById('cre-pu')};
+[cE.o,cE.m,cE.i].forEach(p=>{p.style.transition='d .48s cubic-bezier(.4,0,.2,1)'});
+[cE.tl,cE.tr,cE.p].forEach(p=>{p.style.transition='opacity .45s ease'});
+cc.addEventListener('mouseenter',()=>{ ho();
+  cE.o.setAttribute('d','M 6 44 C 6 44 28 6 54 6 C 80 6 102 44 102 44 C 102 44 80 82 54 82 C 28 82 6 44 6 44 Z');
+  cE.m.setAttribute('d','M 16 44 C 16 44 30 14 54 14 C 78 14 92 44 92 44 C 92 44 78 74 54 74 C 30 74 16 44 16 44 Z');
+  cE.i.setAttribute('d','M 28 44 C 28 44 36 24 54 24 C 72 24 80 44 80 44 C 80 44 72 64 54 64 C 36 64 28 44 28 44 Z');
+  cE.tl.setAttribute('opacity','.65'); cE.tr.setAttribute('opacity','.65'); cE.p.setAttribute('opacity','.85');
+});
+cc.addEventListener('mouseleave',()=>{ hx();
+  cE.o.setAttribute('d','M 6 36 L 102 36'); cE.m.setAttribute('d','M 6 44 L 102 44'); cE.i.setAttribute('d','M 6 52 L 102 52');
+  cE.tl.setAttribute('opacity','0'); cE.tr.setAttribute('opacity','0'); cE.p.setAttribute('opacity','0');
+});
+
+/* ══ BUILDING — fill squares ══ */
+const bc=document.getElementById('c-build');
+bc.addEventListener('mouseenter',()=>{ ho(); ['bb1','bb2','bb3','bb4'].forEach(id=>document.getElementById(id).setAttribute('opacity','1')); });
+bc.addEventListener('mouseleave',()=>{ hx(); ['bb1','bb2','bb3','bb4'].forEach(id=>document.getElementById(id).setAttribute('opacity','0')); });
+
+/* ══ ABOUT ══ */
+document.getElementById('name-circle').addEventListener('click',()=>document.getElementById('about-panel').classList.add('on'));
+document.getElementById('name-circle').addEventListener('mouseenter',ho);
+document.getElementById('name-circle').addEventListener('mouseleave',hx);
+document.getElementById('about-close').addEventListener('click',()=>document.getElementById('about-panel').classList.remove('on'));
+document.getElementById('about-close').addEventListener('mouseenter',ho);
+document.getElementById('about-close').addEventListener('mouseleave',hx);
+document.getElementById('about-panel').addEventListener('click',e=>{if(e.target===document.getElementById('about-panel'))document.getElementById('about-panel').classList.remove('on');});
+
+/* ══ STREAM DATA ══ */
+const STREAMS = {
+  work:{
+    eyebrow:'Work Experience',title:'Where knowledge became impact.',
+    desc:'Pattern recognition travels well. From building GTM strategies to returning 40%+ CAGR in equities, I\'ve always strived to deliver unique value.',
+    type:'arcs',
+    iconSVG:`<svg width="22" height="18" viewBox="0 0 108 88" fill="none"><line x1="6" y1="22" x2="78" y2="22" stroke="#a85530" stroke-width="1.2"/><circle cx="22" cy="17" r="5" stroke="#a85530" stroke-width="1" fill="none"/><line x1="18" y1="42" x2="100" y2="42" stroke="#a85530" stroke-width="1.2"/><circle cx="52" cy="37" r="5" stroke="#a85530" stroke-width="1" fill="none"/></svg>`,
+    arcs:[
+      {
+        label:'Finance Internships',
+        roles:[
+          {co:'Crosseas Capital',rl:'Derivatives Intern · Oct 2021',tp:.75,dt:'First real markets exposure.\n\nWorked on short-term derivatives trading, tracking volatility, stock news, and various indicators to identify optimal entry and exit points for trades.'},
+          {co:'Dezerv Investments',rl:'Portfolio Management Intern · Aug 2022',tp:.60,dt:'Built quantitative models comparing index and mutual fund returns to multiple-period randomising stock portfolios.\n\nSimulated the expectation and variance of stock picking vs established indices and funds.'},
+          {co:'Chiratae Ventures',rl:'Exits Intern · Jun–Aug 2025',tp:.20,dt:'Led brand valuation model as part of preliminary valuations for a potential $1B IPO. Presented findings to Managing Partners and external PwC consultants.\n\nIdentified 150 high-quality secondary investors from a cleaned list of 1,000+ funds. Assembled a research report on AI utilisation and future expansion for a portfolio company.'}
+        ]
+      },
+      {
+        label:'Other Internships',
+        roles:[
+          {co:'IKEA Ad Campaign',rl:'3rd AD · Jun–Sep 2023',tp:.43,dt:'3rd AD on an IKEA ad campaign (Ads that skip you). Worked end-to-end on creative vision and execution, managing cast and logistics on-set.\n\nOne Show & Effies winner. One of 10+ on-set projects with the family production house.'},
+          {co:'Atomicwork Software',rl:"Founder's Office Intern · Jul–Aug 2024",tp:.25,dt:'Collected data from 1,500+ reviews to surface competitive insights. Led research quantifying competitors\' NPS by industry, product, and stage of usage.\n\nPresented differentiation findings to Product, GTM, Marketing, and Founder teams. Worked in a founder\'s office role with unprecedented access to VC and client conversations.'}
+        ]
+      },
+      {
+        label:'My Startup — ProperlyAI',
+        roles:[
+          {co:'ProperlyAI Technologies',rl:'Co-Founder · Feb 2024 – Mar 2025',tp:.48,dt:'Built and launched an AI-powered CRM for realtors — 100+ waitlisted users and 80 active trials. Conducted 200+ in-person and 1,200+ cold call interviews across 3 strategic pivots.\n\nEarned $10,000+ in grants and credits. Won Techstars Startup Weekend @USC, NYU Startup Bootcamp, and Sprint Accelerator.'}
+        ]
+      },
+      {
+        label:'SFIC — UCSD Student Fund',
+        roles:[
+          {co:'SFIC — UCSD Student Fund',rl:'Senior Analyst · Sep 2023 – Present',tp:.29,dt:'Senior Analyst in a $1.5M student-run equities fund, specialising in Industrials and FIG research. Led teams of 4–8 delivering equity research and multi-case valuation models (DCF, DDM, NAV).\n\n83% approval ratio on investment pitches. 2-year growth on multiple investments exceeding 80%.'}
+        ]
+      }
+    ]
+  },
+  learning:{
+    eyebrow:'Learning',title:'Where curiosity has led me.',
+    desc:'From mathematical proofs to sourdough chemistry, my curiosity has always driven me across fields, and left me with an urge to share my findings.',
+    type:'graph',
+    iconSVG:`<svg width="22" height="18" viewBox="0 0 120 100" fill="none"><polyline points="10,16 60,56 110,16" stroke="#a85530" stroke-width="1.3" fill="none" stroke-linejoin="round"/><polyline points="10,34 60,74 110,34" stroke="#a85530" stroke-width="1.3" fill="none" stroke-linejoin="round"/><polyline points="10,52 60,92 110,52" stroke="#a85530" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>`,
+    branches:[
+      {label:'Mathematics',x:.50,y:.15,children:[
+        {label:'Combinatorics & Graph Theory',x:.76,y:.06},
+        {label:'Real & Functional Analysis',x:.88,y:.20},
+        {label:'Stochastic Processes',x:.82,y:.34},
+        {label:'Game Theory',x:.33,y:.11}
+      ]},
+      {label:'Blogs',x:.22,y:.50,children:[
+        {label:'Today I Found Out',x:.06,y:.60,url:'https://tifowithvhr.blogspot.com/'},
+        {label:'The Side Dish',x:.06,y:.40,url:'https://thesidedishbyvedant.blogspot.com/'}
+      ]},
+      {label:'Natural Sciences',x:.78,y:.52,children:[
+        {label:'Biodiesel Research',x:.92,y:.42},
+        {label:'Astrophysics',x:.95,y:.58}
+      ]},
+      {label:'Cognitive Science',x:.50,y:.62,children:[
+        {label:'Cognitive Neuroeconomics',x:.32,y:.58},
+        {label:'Music and the Mind',x:.70,y:.66},
+        {label:'Sensation & Perception',x:.64,y:.76},
+        {label:'Origins of Humour',x:.38,y:.72}
+      ]},
+      {label:'Summer Programs',x:.22,y:.22,children:[
+        {label:'Yale Young Global Scholars',x:.05,y:.12},
+        {label:'NYT — Food & Writing',x:.07,y:.30}
+      ]}
+    ]
+  },
+  creativity:{
+    eyebrow:'Creativity',title:'The hidden weapon.',
+    desc:'I grew up on film sets and in music sessions. Creativity was second nature, and even now shapes how I deal with complex and unfamiliar situations.',
+    type:'gallery',
+    iconSVG:`<svg width="22" height="18" viewBox="0 0 108 88" fill="none"><path d="M 6 44 C 6 44 28 6 54 6 C 80 6 102 44 102 44 C 102 44 80 82 54 82 C 28 82 6 44 6 44 Z" stroke="#a85530" stroke-width="1.3" fill="none"/><circle cx="54" cy="44" r="4" fill="#a85530" opacity=".7"/></svg>`,
+    items:[
+      {size:'hero',  category:'Food',  title:'The Side Dish',                        sub:'2021 — Present',geo:'triangle', url:'https://thesidedishbyvedant.blogspot.com/'},
+      {size:'large', category:'Music', title:'Guitar',                               sub:'2016 — Present',geo:'circle'},
+      {size:'large', category:'Music', title:'Singing — Hindustani Classical',        sub:'2009 — 2022',   geo:'circle'},
+      {size:'small', category:'Food',  title:'Pop-Up Restaurant',                    sub:'Aug 2022',      geo:'triangle'},
+      {size:'small', category:'Film',  title:'IKEA Campaign — One Show & Effies',    sub:'2022 · 3rd AD', geo:'square'},
+      {size:'small', category:'Music', title:'Other Instruments',                    sub:'',              geo:'circle'},
+      {size:'small', category:'Art',   title:'My Art',                               sub:'',              geo:'square'}
+    ]
+  },
+  entrepreneurship:{
+    eyebrow:'Entrepreneurship',title:'The desire to create something new.',
+    desc:'Creativity, curiosity, and craft made building a certain outcome. And regardless of success or failure, every venture left me with immense learning.',
+    type:'timeline',
+    iconSVG:`<svg width="22" height="18" viewBox="0 0 108 88" fill="none"><rect x="4" y="4" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="#a85530" fill-opacity=".48"/><rect x="30" y="4" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="#a85530" fill-opacity=".48"/><rect x="56" y="4" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="none"/><rect x="4" y="30" width="22" height="22" stroke="#a85530" stroke-width=".9" fill="none"/></svg>`,
+    sections:[
+      {title:'ProperlyAI',items:[
+        {date:'Nov 2023',title:'Founded',desc:'Co-founded an AI contracts tool to help streamline real estate contract generation.',accent:false},
+        {date:'Feb 2024',title:'First Pivot',desc:'5 realtor interviews revealed a better opportunity. Pivoted to agentic CRM technology integrating with messages and email.',accent:false},
+        {date:'Apr 2024',title:'Techstars Startup Weekend — 2nd Place',desc:'Strong interest from Techstars accelerator at USC.',accent:true},
+        {date:'May 2024',title:'A Big Mistake',desc:'Decided the gap was significant. Expanded to 4 core members, hired freelance teams for backend and UI/UX. Stopped talking to customers.',accent:false},
+        {date:'Sep 2024',title:'Released to Waitlist — Product Failed',desc:'80 realtors on waitlist. Not enough customer discovery, moved to sales mode too fast. Built a solution in search of a problem.',accent:false},
+        {date:'Oct 2024',title:'NYU Startup Bootcamp — Top Prize',desc:'Bootcamp forced customer discovery. Invalidated our root assumption, found a new pivot. 100+ interviews in 6 weeks — won top prize for most interviews conducted.',accent:true},
+        {date:'Dec 2024',title:'Second Pivot',desc:'50+ homebuyer interviews. Found a potential gap in the homebuyer experience, pivoted to B2C.',accent:false},
+        {date:'Jan 2025',title:'NYU Startup Sprint — Top Prize',desc:'2 weeks in-person at NYU. 100+ interviews in 10 days. Problem validated, feasibility unknown. Won Most Interviews B2C, nearly won B2B.',accent:true},
+        {date:'Mar 2025',title:'Shut Down',desc:'Product feasibility concerns, difficulty building a marketing pipeline, larger firms entered the space. Disincorporated the C-Corp. No regrets.',accent:false}
+      ]},
+      {title:'Student Entrepreneurs Network — UCSD',items:[
+        {date:'Sep 2023',title:'Joined as Vice President',desc:'New club, exciting events, promising leadership and mission.',accent:false},
+        {date:'Jan 2024',title:'First Rush — 300+ Attendees',desc:'Built marketing strategies and materials, reached hundreds of students across platforms. 300+ unique attendees through the door.',accent:true},
+        {date:'May 2024',title:'Failing Club',desc:'600+ unique attendees, under 20 repeat attendees. Astronomical churn.',accent:false},
+        {date:'Sep 2024',title:'Stepped in as President',desc:'Restructured the board, replaced underperforming executives, rebuilt brand, marketing pipeline, and events structure from scratch.',accent:true},
+        {date:'Jan 2025',title:'Fresh Recruitment Cycle',desc:'Previous quarter showed slow improvement — marginally higher retention and strong attendance.',accent:false},
+        {date:'Mar 2025',title:'Membership Structure',desc:'100+ recurring attendees (3+ events). 40% of events with partner organisations. Created exclusive membership tiers, formal application process.',accent:true},
+        {date:'Jun 2025',title:'Stepped Down — Results',desc:'1,000+ unique attendees. 100+ recurring members. Under 35% acceptance rate. Strategic partnerships with UCSD School of Entrepreneurship, a startup accelerator, and acquisition of the Venture Capital club.',accent:true}
+      ]}
+    ]
+  }
+};
+
+/* ══ ZOOM + OPEN STREAM ══ */
+const landing = document.getElementById('landing');
+const sv      = document.getElementById('stream-view');
+const sb      = document.getElementById('stream-body');
+
+// Map data-stream id to corner string
+const CORNER_MAP = {'learning':'tl','work':'tr','creativity':'bl','entrepreneurship':'br'};
+
+document.querySelectorAll('.corner').forEach(corner=>{
+  corner.addEventListener('click',()=>{
+    const key = corner.dataset.stream;
+    const cid = CORNER_MAP[key]; // 'tl','tr','bl','br'
+    activeCorner = cid;
+
+    // Set transform-origin to the actual corner BEFORE adding zoom class
+    const origins = {tl:'0% 0%', tr:'100% 0%', bl:'0% 100%', br:'100% 100%'};
+    landing.style.transformOrigin = origins[cid];
+
+    // Apply header alignment immediately (before zoom completes) to avoid flash
+    if(key==='work') {
+      document.getElementById('header-wrap')?.classList.add('right-align');
+    } else {
+      document.getElementById('header-wrap')?.classList.remove('right-align');
+    }
+
+    // Trigger zoom
+    landing.classList.add('zoomed');
+
+    // Draw stream bg immediately
+    resizeStream();
+
+    // Show stream after zoom
+    setTimeout(()=>{ buildStream(key); sv.classList.add('visible'); setTimeout(setupBhBack, 100); }, 680);
+  });
+});
+
+function buildStream(key) {
+  const data=STREAMS[key]; if(!data) return;
+  document.getElementById('stream-icon').innerHTML=data.iconSVG||'';
+  document.getElementById('s-eyebrow').textContent=data.eyebrow;
+  document.getElementById('s-title').textContent=data.title;
+  document.getElementById('s-desc').textContent=data.desc;
+  // For work/entrepreneurship BH is on left, push content right
+  const rightLayout = (data.type==='arcs'||data.type==='timeline');
+
+  let html='';
+  if(data.type==='arcs'){
+    html=`<div id="arc-stage"><svg id="arc-svg"></svg></div>`;
+  } else if(data.type==='graph'){
+    document.getElementById('header-wrap')?.classList.remove('right-align');
+    html=`<div class="content-wrap"><div id="learn-stage" style="height:calc(100vh - 180px);min-height:380px;position:relative"><svg id="learn-svg" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none"></svg></div></div>`;
+  } else if(data.type==='gallery'){
+    document.getElementById('header-wrap')?.classList.remove('right-align');
+    // 3-col asymmetric: hero(col1), mid×2(col2), small×4(col3)
+    const [hero, g1, g2, s1, s2, s3, s4] = data.items;
+    const frameHtml = (it, cls) => {
+      const sub = it.sub ? `${it.category} · ${it.sub}` : it.category;
+      const link = it.url ? `style="cursor:pointer" onclick="window.open('${it.url}','_blank')"` : '';
+      return `<div class="gallery-frame ${cls}" ${link}><div class="frame-placeholder">Add image</div><div class="frame-inner"><div class="frame-geo">${geo(it.geo)}</div><div class="frame-sub">${sub}</div><div class="frame-title">${it.title}</div></div></div>`;
+    };
+    html=`<div class="content-wrap"><div class="gallery-wrap"><div class="gallery-grid">`;
+    html+=frameHtml(hero,'hero');
+    html+=`<div class="gallery-col-mid">${frameHtml(g1,'mid')}${frameHtml(g2,'mid')}</div>`;
+    html+=`<div class="gallery-col-sm">${frameHtml(s1,'small')}${frameHtml(s2,'small')}${frameHtml(s3,'small')}${frameHtml(s4,'small')}</div>`;
+    html+=`</div></div></div>`;
+  } else if(data.type==='timeline'){
+    document.getElementById('header-wrap')?.classList.remove('right-align');
+  document.getElementById('header-wrap')?.classList.remove('left-flush');
+    document.querySelector('.content-wrap')?.classList.add('left-flush');
+    html=`<div class="content-wrap"><div class="build-wrap" style="padding-left:0;padding-right:0">`;
+    data.sections.forEach(sec=>{
+      html+=`<div class="build-section"><div class="build-section-title">${sec.title}</div><div class="build-items">`;
+      sec.items.forEach(it=>{ html+=`<div class="build-item${it.accent?' accent':''}"><div class="build-date">${it.date}</div><div class="build-dot-col"><div class="build-dot"></div></div><div class="build-body"><div class="build-title">${it.title}</div><div class="build-desc">${it.desc}</div></div></div>`; });
+      html+=`</div></div>`;
+    });
+    html+=`</div></div>`;
+  }
+  sb.innerHTML=html;
+  // Always clear arc-svg when switching pages so it doesn't block other pages
+  const arcSvgEl = document.getElementById('arc-svg');
+  if(arcSvgEl && data.type!=='arcs') {
+    arcSvgEl.innerHTML='';
+    arcSvgEl.style.pointerEvents='none';
+    arcSvgEl.style.display='none';
+  }
+  if(arcSvgEl && data.type==='arcs') {
+    arcSvgEl.style.display='block';
+  }
+  if(data.type==='arcs')  setTimeout(()=>buildArcs(data.arcs),300);
+  if(data.type==='graph') setTimeout(()=>buildGraph(data.branches),120);
+}
+
+/* ══ ARC LAYOUT ══
+   Origin: top-right corner of the screen (work experience is TR).
+   Arcs sweep ~100° inward from that corner into the viewport.
+   For TR corner: origin=(W,0), arcs sweep from ~170° to ~270° (into viewport).
+*/
+const arcTT = document.getElementById('arc-tt');
+
+function moveTT(e) {
+  const pad=14, tw=260;
+  let x=e.clientX+pad, y=e.clientY-20;
+  if(x+tw>window.innerWidth) x=e.clientX-tw-pad;
+  if(y<0) y=pad;
+  arcTT.style.left=x+'px'; arcTT.style.top=y+'px';
+}
+document.addEventListener('mousemove', e => {
+  if(arcTT.classList.contains('on')) moveTT(e);
+});
+
+function buildArcs(arcs) {
+  const stage = document.getElementById('arc-stage');
+  const svg   = document.getElementById('arc-svg');
+  if(!stage||!svg) return;
+
+  const SW = stage.offsetWidth;
+  const SH = stage.offsetHeight;
+
+  // SVG is now position:fixed full-screen — use screen coords directly
+  const {bx:OX, by:OY, bhR:arcBhRaw} = window._bh || {bx:0, by:sH, bhR:Math.min(sW,sH)*.36};
+  svg.setAttribute('width', sW);
+  svg.setAttribute('height', sH);
+  svg.setAttribute('viewBox', `0 0 ${sW} ${sH}`);
+
+  // Clip everything to viewport so arcs don't show outside screen
+  const clipPath = document.createElementNS('http://www.w3.org/2000/svg','clipPath');
+  clipPath.setAttribute('id','arc-clip');
+  const clipRect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  clipRect.setAttribute('x','0'); clipRect.setAttribute('y','0');
+  clipRect.setAttribute('width', sW); clipRect.setAttribute('height', sH);
+  clipPath.appendChild(clipRect);
+  svg.appendChild(clipPath);
+  const arcGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+  arcGroup.setAttribute('clip-path','url(#arc-clip)');
+  svg.appendChild(arcGroup);
+
+  const startAngle = 0;
+  const endAngle   = -Math.PI / 2;
+
+  // Arc data with duration-based thickness
+  // duration: months of each role (approximate)
+  // SFIC: 20mo, Filmmaking: 4mo, Startup: 2mo, VC: 3mo, PM: 3mo, Derivatives: 3mo
+  // Radii match drawStreamBg ring radii exactly
+  const arcBhR = arcBhRaw;
+
+  const arcDefs = [
+    {
+      // Arc 1: Other internships — outermost (Film+Startup)
+      data: arcs[1],
+      R: arcBhR * 3.20,
+      baseOpacity: 0.38,
+      roles: arcs[1].roles.map((r,i) => ({...r,
+        duration: [5,6][i] || 5
+      }))
+    },
+    {
+      // SFIC — third (R=2.65)
+      data: arcs[3],
+      R: arcBhR * 2.65,
+      baseOpacity: 0.44,
+      roles: arcs[3].roles.map((r,i) => ({...r,
+        duration: [24][i] || 24
+      }))
+    },
+    {
+      // Finance internships — middle (R=2.20)
+      data: arcs[0],
+      R: arcBhR * 2.20,
+      baseOpacity: 0.48,
+      roles: arcs[0].roles.map((r,i) => ({...r,
+        duration: [4,4,10][i] || 4
+      }))
+    },
+    {
+      // ProperlyAI — Innermost (R=1.55)
+      data: arcs[2],
+      R: arcBhR * 1.55,
+      baseOpacity: 0.72,
+      roles: arcs[2].roles.map((r,i) => ({...r,
+        duration: [28][i] || 28
+      }))
+    }
+  ];
+
+  const maxDuration = 33; // SFIC is the reference maximumlly
+
+  arcDefs.forEach((arcDef, ai) => {
+    const {R, baseOpacity} = arcDef;
+    const arc = arcDef.data;
+
+    // Full thin background arc line
+    const fullSx = OX + R * Math.cos(startAngle);
+    const fullSy = OY + R * Math.sin(startAngle);
+    const fullEx = OX + R * Math.cos(endAngle);
+    const fullEy = OY + R * Math.sin(endAngle);
+    const fullD  = `M ${fullSx.toFixed(1)},${fullSy.toFixed(1)} A ${R},${R} 0 0,0 ${fullEx.toFixed(1)},${fullEy.toFixed(1)}`;
+    const tpId   = `tp-${ai}`;
+
+    // Thin base track
+    const track = document.createElementNS('http://www.w3.org/2000/svg','path');
+    track.setAttribute('d', fullD);
+    track.setAttribute('fill','none');
+    track.setAttribute('stroke', `rgba(200,82,22,${baseOpacity * 0.7})`);
+    track.setAttribute('stroke-width', '1.2');
+    track.setAttribute('stroke-linecap','round');
+    arcGroup.appendChild(track);
+
+    // Text path — reversed direction so text reads left-to-right along arc
+    // Arc goes from (R,OY) bottom-right to (OX,OY-R) top-left → text upside down
+    // Reverse: go from top-left to bottom-right for readable text
+    const reversedD = `M ${fullEx.toFixed(1)},${fullEy.toFixed(1)} A ${R},${R} 0 0,1 ${fullSx.toFixed(1)},${fullSy.toFixed(1)}`;
+    const tpPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+    tpPath.setAttribute('id', tpId);
+    tpPath.setAttribute('d', reversedD);
+    tpPath.setAttribute('fill','none');
+    tpPath.setAttribute('stroke','none');
+    arcGroup.appendChild(tpPath);
+
+    // Arc group label following the curve
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('fill', `rgba(237,229,216,${baseOpacity * 0.8 + 0.1})`);
+    txt.setAttribute('font-family','Cormorant Garamond, Georgia, serif');
+    txt.setAttribute('font-size', `${14 + (2-ai)}px`);
+    txt.setAttribute('font-weight','300');
+    txt.setAttribute('letter-spacing','0.08em');
+    txt.setAttribute('dy','-10');
+    const tp = document.createElementNS('http://www.w3.org/2000/svg','textPath');
+    tp.setAttribute('href', `#${tpId}`);
+    // Per-arc offsets tuned to visible portion of each arc
+    const offsets = ['38%','20%','18%','22%'];
+    tp.setAttribute('startOffset', offsets[ai] || '18%');
+    tp.textContent = arc.label;
+    txt.appendChild(tp);
+    arcGroup.appendChild(txt);
+
+    // For each role: draw a thick arc segment sized by duration, then a Bindu dot
+    arcDef.roles.forEach((role, ri) => {
+      const durFrac = role.duration / maxDuration; // 0..1
+      const thickness = 1.0 + durFrac * 3.0; // 1px thin → 4px thick for SFIC
+
+      // Role arc: centred on role.tp position, spanning duration proportionally
+      const totalSpan = Math.abs(endAngle - startAngle); // always positive
+      const span = totalSpan * (role.duration / maxDuration) * 0.70;
+      const centreAngle = startAngle + (endAngle - startAngle) * role.tp;
+      // segStart is always the lesser angle, segEnd the greater
+      const segStart = centreAngle - span / 2;
+      const segEnd   = centreAngle + span / 2;
+
+      const sx = OX + R * Math.cos(segStart);
+      const sy = OY + R * Math.sin(segStart);
+      const ex = OX + R * Math.cos(segEnd);
+      const ey = OY + R * Math.sin(segEnd);
+      // For CCW arc (sweep 0,0), draw from the higher angle to the lower
+      // segStart is more negative (closer to -PI/2), segEnd is less negative (closer to 0)
+      // We want to draw CCW from segEnd (right) to segStart (up)
+      const segD = `M ${ex.toFixed(1)},${ey.toFixed(1)} A ${R},${R} 0 0,0 ${sx.toFixed(1)},${sy.toFixed(1)}`;
+
+      // Thick segment path (duration visualisation)
+      const segId = `seg-${ai}-${ri}`;
+      const seg = document.createElementNS('http://www.w3.org/2000/svg','path');
+      seg.setAttribute('id', segId);
+      seg.setAttribute('d', segD);
+      seg.setAttribute('fill','none');
+      const segBrightness = Math.min(baseOpacity * 2.4, 0.98);
+      seg.setAttribute('stroke', `rgba(228,128,65,${segBrightness})`);
+      seg.setAttribute('stroke-width', thickness.toFixed(1));
+      seg.setAttribute('stroke-linecap','round');
+      seg.style.transition = 'stroke .3s, stroke-width .3s, filter .3s';
+      seg.style.filter = `drop-shadow(0 0 ${(3 + durFrac * 5).toFixed(1)}px rgba(220,100,40,${(0.5 + durFrac * 0.4).toFixed(2)})) drop-shadow(0 0 ${(8 + durFrac * 10).toFixed(1)}px rgba(180,70,20,${(0.2 + durFrac * 0.3).toFixed(2)}))`;
+      seg.style.cursor = 'default';
+      arcGroup.appendChild(seg);
+
+      // Wide invisible hit area
+      const hit = document.createElementNS('http://www.w3.org/2000/svg','path');
+      hit.setAttribute('d', segD);
+      hit.setAttribute('fill','none');
+      hit.setAttribute('stroke','transparent');
+      hit.setAttribute('stroke-width', Math.max(thickness + 20, 32).toFixed(1));
+      hit.style.cursor = 'default';
+      hit.style.pointerEvents = 'all';
+      arcGroup.appendChild(hit);
+
+      // Bindu dot at centre of segment
+      const bx = (OX + R * Math.cos(centreAngle)).toFixed(1);
+      const by = (OY + R * Math.sin(centreAngle)).toFixed(1);
+      // 3D shading: create radial gradient per dot
+      const dotR = (5 + durFrac * 5);
+      const gradId = `dg-${ai}-${ri}`;
+      const defs = svg.querySelector('defs') || (() => {
+        const d = document.createElementNS('http://www.w3.org/2000/svg','defs');
+        svg.insertBefore(d, svg.firstChild); return d;
+      })();
+      const grad = document.createElementNS('http://www.w3.org/2000/svg','radialGradient');
+      grad.setAttribute('id', gradId);
+      grad.setAttribute('cx','35%'); grad.setAttribute('cy','30%');
+      grad.setAttribute('r','65%');
+      const s1 = document.createElementNS('http://www.w3.org/2000/svg','stop');
+      s1.setAttribute('offset','0%'); s1.setAttribute('stop-color','rgba(255,180,100,1)');
+      const s2 = document.createElementNS('http://www.w3.org/2000/svg','stop');
+      s2.setAttribute('offset','50%'); s2.setAttribute('stop-color','rgba(200,90,35,1)');
+      const s3 = document.createElementNS('http://www.w3.org/2000/svg','stop');
+      s3.setAttribute('offset','100%'); s3.setAttribute('stop-color','rgba(80,25,5,1)');
+      grad.appendChild(s1); grad.appendChild(s2); grad.appendChild(s3);
+      defs.appendChild(grad);
+
+      const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('cx', bx);
+      dot.setAttribute('cy', by);
+      dot.setAttribute('r', dotR.toFixed(1));
+      dot.setAttribute('fill', `url(#${gradId})`);
+      dot.setAttribute('stroke','rgba(10,7,4,.85)');
+      dot.setAttribute('stroke-width','1');
+      dot.style.filter = 'drop-shadow(0 0 5px rgba(212,104,58,.5))';
+      dot.style.transition = 'r .2s, filter .2s';
+      dot.style.pointerEvents = 'all';
+      arcGroup.appendChild(dot);
+
+      // Year labels removed — shown in tooltip on hover
+
+      // Hover: brighten segment, grow dot, show tooltip
+      const showTT = e => {
+        seg.setAttribute('stroke', `rgba(255,170,90,1)`);
+        seg.setAttribute('stroke-width', (thickness + 0.8).toFixed(1));
+        seg.style.filter = `drop-shadow(0 0 ${(6 + durFrac * 8).toFixed(1)}px rgba(240,120,50,.9)) drop-shadow(0 0 ${(16 + durFrac * 14).toFixed(1)}px rgba(200,80,20,.6))`;
+        dot.setAttribute('r', (7 + durFrac * 5).toFixed(1));
+        dot.style.filter = 'drop-shadow(0 0 12px rgba(212,104,58,.85))';
+        document.getElementById('tt-co').textContent = role.co;
+        document.getElementById('tt-rl').textContent = role.rl;
+        document.getElementById('tt-dt').innerHTML = role.dt.split('\n\n').map(p=>`<p style="margin:0 0 .4em">${p}</p>`).join('');
+        arcTT.classList.add('on');
+        moveTT(e);
+      };
+      const hideTT = () => {
+        seg.setAttribute('stroke', `rgba(228,128,65,${Math.min(baseOpacity*2.4,0.98)})`);
+        seg.setAttribute('stroke-width', thickness.toFixed(1));
+        seg.style.filter = `drop-shadow(0 0 ${(3+durFrac*5).toFixed(1)}px rgba(220,100,40,${(0.5+durFrac*0.4).toFixed(2)})) drop-shadow(0 0 ${(8+durFrac*10).toFixed(1)}px rgba(180,70,20,${(0.2+durFrac*0.3).toFixed(2)}))`;
+        dot.setAttribute('r', (5 + durFrac * 5).toFixed(1));
+        dot.style.filter = 'drop-shadow(0 0 5px rgba(212,104,58,.5))';
+        arcTT.classList.remove('on');
+      };
+      [seg, hit, dot].forEach(el => {
+        el.addEventListener('mouseenter', showTT);
+        el.addEventListener('mouseleave', hideTT);
+        el.addEventListener('mousemove', moveTT);
+      });
+    });
+  });
+}
+
+
+function buildGraph(branches) {
+  const stage=document.getElementById('learn-stage');
+  const svg=document.getElementById('learn-svg');
+  if(!stage||!svg) return;
+  const W=stage.offsetWidth, H=stage.offsetHeight;
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const cx=W*.50, cy=H*.44;
+
+  const nodes=[{x:cx,y:cy,id:'n-core',lid:null,type:'branch'}];
+  branches.forEach((b,bi)=>{
+    const bx=b.x*W,by=b.y*H;
+    addLine(svg,cx,cy,bx,by,'rgba(212,130,70,.58)',`l-b${bi}`);
+    nodes.push({x:bx,y:by,id:`n-b${bi}`,lid:`l-b${bi}`,type:'branch'});
+    b.children.forEach((c,ci)=>{
+      const chx=c.x*W,chy=c.y*H;
+      addLine(svg,bx,by,chx,chy,'rgba(212,130,70,.38)',`l-c${bi}${ci}`);
+      nodes.push({x:chx,y:chy,id:`n-c${bi}${ci}`,lid:`l-c${bi}${ci}`,type:'child'});
+    });
+  });
+
+  addNode('UCSD','n-core',cx,cy,stage,'branch');
+  branches.forEach((b,bi)=>{
+    addNode(b.label,`n-b${bi}`,b.x*W,b.y*H,stage,'branch',b.url||'');
+    b.children.forEach((c,ci)=>addNode(c.label,`n-c${bi}${ci}`,c.x*W,c.y*H,stage,'child'));
+  });
+
+  // Build parent→children map for descendant highlighting
+  const childMap = {};
+  branches.forEach((b,bi)=>{
+    childMap[`n-b${bi}`] = b.children.map((_,ci)=>`n-c${bi}${ci}`);
+    b.children.forEach((_,ci)=>{ childMap[`n-c${bi}${ci}`] = []; });
+  });
+  childMap['n-core'] = branches.map((_,bi)=>`n-b${bi}`);
+
+  function highlightNode(id, strong) {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.classList.add(strong ? 'lit' : 'lit-soft');
+  }
+  function clearHighlights() {
+    document.querySelectorAll('.learn-node').forEach(n=>{ n.classList.remove('lit','lit-soft'); });
+    // Restore original colours per node type
+    nodes.forEach(n=>{
+      const ln=n.lid?document.getElementById(n.lid):null;
+      if(!ln) return;
+      const isBranch = n.type==='branch';
+      ln.setAttribute('stroke', isBranch ? 'rgba(212,130,70,.58)' : 'rgba(212,130,70,.38)');
+      ln.setAttribute('stroke-dasharray','3 4');
+    });
+  }
+
+  stage.addEventListener('mousemove',e=>{
+    const r=stage.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top, thr=80;
+    clearHighlights();
+    nodes.forEach(n=>{
+      const d=Math.hypot(mx-n.x,my-n.y);
+      if(d<thr){
+        // Highlight hovered node strongly
+        highlightNode(n.id, true);
+        // Highlight its line
+        const ln=n.lid?document.getElementById(n.lid):null;
+        if(ln){ln.setAttribute('stroke','rgba(168,85,48,.75)');ln.setAttribute('stroke-dasharray','none');}
+        // Highlight direct children softly
+        (childMap[n.id]||[]).forEach(cid=>{
+          highlightNode(cid, false);
+          // find child's line
+          const cn = nodes.find(x=>x.id===cid);
+          if(cn&&cn.lid){
+            const cl=document.getElementById(cn.lid);
+            if(cl){cl.setAttribute('stroke','rgba(168,85,48,.38)');cl.setAttribute('stroke-dasharray','none');}
+          }
+        });
+      }
+    });
+  });
+  stage.addEventListener('mouseleave', clearHighlights);
+
+  // Organic proximity parallax — nodes float toward cursor with depth-based speed
+  // Each node gets a unique drift multiplier so they move at slightly different rates
+  nodes.forEach((n,i) => {
+    n._drift = 0.85 + (i % 5) * 0.08; // 0.85 to 1.17 — organic variation
+  });
+  stage.addEventListener('mousemove', e => {
+    const r = stage.getBoundingClientRect();
+    const cx = e.clientX - r.left;
+    const cy = e.clientY - r.top;
+    nodes.forEach(n => {
+      const el = document.getElementById(n.id);
+      if(!el) return;
+      const dist = Math.hypot(cx - n.x, cy - n.y);
+      const radius = 150;
+      if(dist < radius) {
+        const falloff = Math.pow(1 - dist/radius, 1.6); // non-linear — feels more organic
+        const strength = falloff * 10 * n._drift;
+        const dx = (cx - n.x) / Math.max(dist, 1) * strength;
+        const dy = (cy - n.y) / Math.max(dist, 1) * strength;
+        el.style.transform = `translate(calc(-50% + ${dx.toFixed(2)}px), calc(-50% + ${dy.toFixed(2)}px))`;
+        el.style.transition = `transform ${(0.12 + n._drift * 0.08).toFixed(2)}s cubic-bezier(.25,.46,.45,.94)`;
+      } else {
+        el.style.transform = 'translate(-50%,-50%)';
+        el.style.transition = `transform ${(0.5 + n._drift * 0.2).toFixed(2)}s cubic-bezier(.25,.46,.45,.94)`;
+      }
+    });
+  });
+  stage.addEventListener('mouseleave', () => {
+    document.querySelectorAll('.learn-node').forEach(el => {
+      el.style.transform = 'translate(-50%,-50%)';
+      el.style.transition = 'transform .6s cubic-bezier(.25,.46,.45,.94)';
+    });
+  });
+}
+
+function addLine(svg,x1,y1,x2,y2,stroke,id) {
+  const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('id',id);l.setAttribute('x1',x1.toFixed(1));l.setAttribute('y1',y1.toFixed(1));
+  l.setAttribute('x2',x2.toFixed(1));l.setAttribute('y2',y2.toFixed(1));
+  l.setAttribute('stroke',stroke);l.setAttribute('stroke-width','.7');l.setAttribute('stroke-dasharray','3 4');
+  svg.appendChild(l);
+}
+function addNode(label,id,x,y,container,type,url='') {
+  const el=document.createElement('div');
+  el.className=`learn-node ${type}`;el.id=id;
+  el.style.left=(x/container.offsetWidth*100)+'%';
+  el.style.top=(y/container.offsetHeight*100)+'%';
+  el.innerHTML=`<span class="learn-label">${label}</span>`;
+  if(url){ el.style.cursor='pointer'; el.addEventListener('click',()=>window.open(url,'_blank')); }
+  container.appendChild(el);
+}
+
+function geo(type) {
+  if(type==='circle')   return '<svg width="11" height="11"><circle cx="5.5" cy="5.5" r="4.5" stroke="#a85530" stroke-width="1" fill="none"/></svg>';
+  if(type==='triangle') return '<svg width="11" height="11"><polygon points="5.5,1 10,10 1,10" stroke="#a85530" stroke-width="1" fill="none"/></svg>';
+  if(type==='square')   return '<svg width="11" height="11"><rect x="1" y="1" width="9" height="9" stroke="#a85530" stroke-width="1" fill="none"/></svg>';
+  return '';
+}
+
+/* ══ BACK BUTTON ══ */
+// ── BH AS BACK BUTTON ──
+// After stream opens, place a click-target over the visible BH quarter
+function setupBhBack() {
+  const existing = document.getElementById('bh-back-svg');
+  if(existing) existing.remove();
+
+  const bh = window._bh;
+  if(!bh) return;
+  const {bx, by, bhR} = bh;
+
+  // Create fixed SVG overlay covering BH area
+  const overlay = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  overlay.setAttribute('id','bh-back-svg');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:25;pointer-events:none;overflow:visible;';
+
+  // Invisible hit circle (full BH radius)
+  const hit = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  hit.setAttribute('cx', bx); hit.setAttribute('cy', by); hit.setAttribute('r', bhR);
+  hit.setAttribute('fill','transparent'); hit.style.cursor='pointer'; hit.style.pointerEvents='all';
+
+  // Glow circle (shown on hover)
+  const glow = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  glow.setAttribute('id','bh-glow');
+  glow.setAttribute('cx', bx); glow.setAttribute('cy', by); glow.setAttribute('r', bhR*1.1);
+  glow.setAttribute('fill','none');
+  glow.setAttribute('stroke','rgba(200,82,22,0)');
+  glow.setAttribute('stroke-width','2');
+  glow.style.transition = 'stroke .35s, filter .35s';
+  glow.style.filter = 'drop-shadow(0 0 0px rgba(200,82,22,0))';
+  glow.style.pointerEvents = 'none';
+
+  overlay.appendChild(glow);
+  overlay.appendChild(hit);
+  document.body.appendChild(overlay);
+
+  function goBack() {
+    arcTT.classList.remove('on');
+    sv.classList.remove('visible');
+    overlay.remove();
+    setTimeout(()=>{
+      document.getElementById('header-wrap')?.classList.remove('right-align');
+      document.getElementById('header-wrap')?.classList.remove('left-flush');
+      landing.classList.remove('zoomed');
+      sb.innerHTML='';
+      document.getElementById('s-eyebrow').textContent='';
+      document.getElementById('s-title').textContent='';
+      document.getElementById('s-desc').textContent='';
+    },520);
+  }
+
+  hit.addEventListener('click', goBack);
+  hit.addEventListener('mouseenter', () => {
+    ho();
+    // Show back arrow in cursor handled by CSS cursor change
+    // Cursor points toward centre of screen (away from BH corner)
+    const backCursor = (activeCorner==='tr'||activeCorner==='br') ? 'w-resize' : 'e-resize';
+    hit.style.cursor = backCursor;
+    // Glow the BH
+    glow.setAttribute('stroke','rgba(200,82,22,0.45)');
+    glow.style.filter = 'drop-shadow(0 0 18px rgba(200,82,22,0.5))';
+  });
+  hit.addEventListener('mouseleave', () => {
+    hx();
+    hit.style.cursor = 'pointer';
+    glow.setAttribute('stroke','rgba(200,82,22,0)');
+    glow.style.filter = 'drop-shadow(0 0 0px rgba(200,82,22,0))';
+  });
+}
+</script>
+</body>
+</html>
