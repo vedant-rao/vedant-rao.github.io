@@ -205,6 +205,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .gpop-close:hover{border-color:var(--s)}
 .gpop-link{display:inline-block;margin-top:1.2rem;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:rgba(212,104,58,.8);text-decoration:none;border-bottom:1px solid rgba(212,104,58,.3);padding-bottom:2px;transition:color .2s,border-color .2s}
 .gpop-link:hover{color:var(--s);border-color:var(--s)}
+
+/* ══ MOBILE WARNING ══ */
+#mobile-warn{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-end;justify-content:center;padding:0 0 2.5rem;pointer-events:none;opacity:0;transition:opacity .4s}
+#mobile-warn.on{opacity:1;pointer-events:all}
+.mwarn-card{background:#0f0c09;border:1px solid rgba(168,85,48,.28);border-radius:3px;padding:1.2rem 1.5rem;max-width:320px;width:90%;pointer-events:all}
+.mwarn-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.1rem;color:var(--white);margin-bottom:.4rem}
+.mwarn-text{font-size:10px;color:rgba(237,229,216,.5);line-height:1.8;margin-bottom:.9rem}
+.mwarn-close{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:rgba(212,104,58,.7);cursor:pointer;border:none;background:none;padding:0;font-family:'DM Mono',monospace}
+.mwarn-close:hover{color:var(--s)}
 /* ══ BRIGHT MODE ══ */
 .bright .corner-label{color:rgba(255,160,80,.95)!important;letter-spacing:.52em}
 .bright .corner-mark svg{opacity:1!important}
@@ -353,6 +362,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
       <div id="gpop-text" class="gpop-text"></div>
     </div>
     <div class="gpop-close" id="gpop-close">✕</div>
+  </div>
+</div>
+
+<!-- MOBILE WARNING -->
+<div id="mobile-warn">
+  <div class="mwarn-card">
+    <div class="mwarn-title">Best on desktop.</div>
+    <p class="mwarn-text">This site was designed for a larger screen. Some content may be hidden and certain features won't work as intended. For the full experience, come back on a desktop or laptop.</p>
+    <button class="mwarn-close" onclick="document.getElementById('mobile-warn').classList.remove('on')">Got it ↗</button>
   </div>
 </div>
 
@@ -1399,6 +1417,11 @@ function copyEmail(e) {
     el.textContent = 'Copied!';
     setTimeout(()=>{ el.textContent = 'Email'; }, 2000);
   });
+}
+
+/* ══ MOBILE WARNING ══ */
+if(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) && window.innerWidth < 768) {
+  setTimeout(()=>{ document.getElementById('mobile-warn').classList.add('on'); }, 800);
 }
 
 </script>
