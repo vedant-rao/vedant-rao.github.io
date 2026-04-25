@@ -214,6 +214,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
 .mwarn-text{font-size:10px;color:rgba(237,229,216,.5);line-height:1.8;margin-bottom:.9rem}
 .mwarn-close{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:rgba(212,104,58,.7);cursor:pointer;border:none;background:none;padding:0;font-family:'DM Mono',monospace}
 .mwarn-close:hover{color:var(--s)}
+#learn-popup.on{opacity:1!important;pointer-events:all!important}
 /* ══ BRIGHT MODE ══ */
 .bright .corner-label{color:rgba(255,160,80,.95)!important;letter-spacing:.52em}
 .bright .corner-mark svg{opacity:1!important}
@@ -349,6 +350,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-famil
       <a class="about-link" href="https://thesidedishbyvedant.blogspot.com/" target="_blank" rel="noopener">The Side Dish</a>
     </div>
     <div class="about-location">San Diego, CA</div>
+  </div>
+</div>
+
+<!-- LEARN POPUP -->
+<div id="learn-popup" style="position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(7,5,3,.82);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .3s">
+  <div style="width:min(560px,90vw);background:#0f0c09;border:1px solid rgba(168,85,48,.22);border-radius:3px;padding:2.2rem;position:relative;max-height:80vh;overflow-y:auto">
+    <div id="lp-close" style="position:absolute;top:.8rem;right:.8rem;width:24px;height:24px;border:1px solid rgba(168,85,48,.28);border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--s);font-size:11px">✕</div>
+    <div id="lp-sub" style="font-size:8.5px;letter-spacing:.38em;text-transform:uppercase;color:var(--s);margin-bottom:.5rem"></div>
+    <div id="lp-title" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.5rem;font-weight:300;color:var(--white);margin-bottom:1rem;line-height:1.2"></div>
+    <div id="lp-text" style="font-size:11px;color:rgba(237,229,216,.58);line-height:1.9"></div>
+    <a id="lp-link" href="#" target="_blank" style="display:none;margin-top:1rem;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:rgba(212,104,58,.8);text-decoration:none;border-bottom:1px solid rgba(212,104,58,.3);padding-bottom:2px">Visit ↗</a>
   </div>
 </div>
 
@@ -730,29 +742,59 @@ const STREAMS = {
     type:'graph',
     iconSVG:`<svg width="22" height="18" viewBox="0 0 120 100" fill="none"><polyline points="10,16 60,56 110,16" stroke="#a85530" stroke-width="1.3" fill="none" stroke-linejoin="round"/><polyline points="10,34 60,74 110,34" stroke="#a85530" stroke-width="1.3" fill="none" stroke-linejoin="round"/><polyline points="10,52 60,92 110,52" stroke="#a85530" stroke-width="1.3" fill="none" stroke-linejoin="round"/></svg>`,
     branches:[
-      {label:'Mathematics',x:.50,y:.15,children:[
-        {label:'Combinatorics & Graph Theory',x:.76,y:.06},
-        {label:'Real & Functional Analysis',x:.88,y:.20},
-        {label:'Stochastic Processes',x:.82,y:.34},
-        {label:'Game Theory',x:.33,y:.11}
+      {label:'Mathematics',x:.50,y:.14,children:[
+        {label:'Combinatorics & Graph Theory',x:.74,y:.06,
+         popup:{title:'Combinatorics & Graph Theory',sub:'Mathematics',
+           text:'Coursework: Math 109, Math 154, Math 184\n\nEnumerative Combinatorics, applied to mathematical reasoning and graph theory.'}},
+        {label:'Real & Functional Analysis',x:.88,y:.18,
+         popup:{title:'Real & Functional Analysis',sub:'Mathematics',
+           text:'Coursework: Math 140A, B, C\n\nThe most failed upper division series at UCSD, covering Topology, Sequences, Functions, Riemann Integration, Multivariable Derivatives, and Measure Theory.'}},
+        {label:'Statistics & Stochastic Processes',x:.82,y:.30,
+         popup:{title:'Statistics & Stochastic Processes',sub:'Mathematics',
+           text:'Coursework: Math 180A, B, C, Math 194\n\nA fast-paced set of classes covering Probability Distributions, Convolutions, Markov Chains in Discrete and Continuous Time, Martingales, and Derivatives Pricing.'}},
+        {label:'Game Theory',x:.30,y:.08,
+         popup:{title:'Game Theory',sub:'Mathematics',
+           text:'Coursework: Econ 109, Econ 200B, Econ 200C\n\nA PhD-restricted series of Game Theory and Mechanism Design classes at UCSD that I took out of sheer intellectual curiosity.'}}
       ]},
-      {label:'Blogs',x:.22,y:.50,children:[
-        {label:'Today I Found Out',x:.06,y:.60,url:'https://tifowithvhr.blogspot.com/'},
-        {label:'The Side Dish',x:.06,y:.40,url:'https://thesidedishbyvedant.blogspot.com/'}
+      {label:'Summer Programs',x:.20,y:.24,children:[
+        {label:'Yale Young Global Scholars',x:.04,y:.14,
+         popup:{title:'Yale Young Global Scholars',sub:'July 2022 · Politics, Law & Economics',
+           text:'A 2-week online program through various aspects of Politics, Law, and Economics. Attended courses in corporate law, plea bargaining, negotiations, and global politics.'}},
+        {label:'School of the New York Times',x:.04,y:.26,
+         popup:{title:'School of the New York Times',sub:'July 2022 · Food Culture & Creative Writing',
+           text:'A 2-week in-person intensive in New York, learning from Raquel Pelzel and other NYT Senior Editors and Writers, who taught us how to write about food as more than just something you eat.'}}
       ]},
-      {label:'Natural Sciences',x:.78,y:.52,children:[
-        {label:'Biodiesel Research',x:.92,y:.42},
-        {label:'Astrophysics',x:.95,y:.58}
+      {label:'Blogs',x:.18,y:.44,children:[
+        {label:'The Side Dish',x:.03,y:.36,url:'https://thesidedishbyvedant.blogspot.com/'},
+        {label:'Today I Found Out',x:.03,y:.48,url:'https://tifowithvhr.blogspot.com/'}
       ]},
-      {label:'Cognitive Science',x:.50,y:.62,children:[
-        {label:'Cognitive Neuroeconomics',x:.32,y:.58},
-        {label:'Music and the Mind',x:.70,y:.66},
-        {label:'Sensation & Perception',x:.64,y:.76},
-        {label:'Origins of Humour',x:.38,y:.72}
+      {label:'Teaching',x:.20,y:.66,children:[
+        {label:'Today I Found Out',x:.03,y:.58,url:'https://tifowithvhr.blogspot.com/',
+         popup:{title:'Today I Found Out',sub:'Teaching · Est. 8th Grade',
+           text:'My first blog, started in 8th grade — a place to share my passion for interesting and intellectual topics with the world. Economics, Physics, concepts I only grew more curious about with time.',
+           url:'https://tifowithvhr.blogspot.com/'}},
+        {label:'Ijaya Foundation',x:.03,y:.68,
+         popup:{title:'Ijaya Foundation',sub:'Teaching',
+           text:'A charitable organisation I attempted to build at the height of COVID, focused on providing children of low-income workers an asynchronous option to have doubts cleared by teachers and older students.'}},
+        {label:'The Math ER',x:.03,y:.78,
+         popup:{title:'The Math ER',sub:'Teaching · UCSD',
+           text:'A tutoring service helping struggling UCSD math students turn around their grades in the final 2–3 weeks before finals, particularly in the calculus sequence. Helped one student go from a <40% course average to a 78% final exam.'}},
+        {label:'High School Tutoring',x:.16,y:.82}
       ]},
-      {label:'Summer Programs',x:.22,y:.22,children:[
-        {label:'Yale Young Global Scholars',x:.05,y:.12},
-        {label:'NYT — Food & Writing',x:.07,y:.30}
+      {label:'Cognitive Science',x:.75,y:.48,children:[
+        {label:'Music and the Mind',x:.92,y:.34,
+         popup:{title:'Music and the Mind',sub:'Cognitive Science · Cogs 157',
+           text:'Explores how humans and other species perceive music, process its elements, and the brain activity associated with it.'}},
+        {label:'Sensation & Perception',x:.97,y:.46},
+        {label:'Cognitive Neuroeconomics',x:.95,y:.58,
+         popup:{title:'Cognitive Neuroeconomics',sub:'Cognitive Science · Cogs 2',
+           text:'The lower-division course that first got me interested in Cog Sci — an exploration of how the brain perceives economic phenomena, and how our financial behaviour can be influenced.'}},
+        {label:'Origins of Humour',x:.80,y:.66}
+      ]},
+      {label:'Natural Sciences',x:.50,y:.70,children:[
+        {label:'Biodiesel Project',x:.28,y:.80},
+        {label:'Astrophysics',x:.50,y:.82},
+        {label:'Calcium Decay Research',x:.65,y:.78}
       ]}
     ]
   },
@@ -1194,10 +1236,10 @@ function buildGraph(branches) {
     });
   });
 
-  addNode('UCSD','n-core',cx,cy,stage,'branch');
+  addNode('','n-core',cx,cy,stage,'branch');
   branches.forEach((b,bi)=>{
-    addNode(b.label,`n-b${bi}`,b.x*W,b.y*H,stage,'branch',b.url||'');
-    b.children.forEach((c,ci)=>addNode(c.label,`n-c${bi}${ci}`,c.x*W,c.y*H,stage,'child'));
+    addNode(b.label,`n-b${bi}`,b.x*W,b.y*H,stage,'branch',b.url||'',b.popup||null);
+    b.children.forEach((c,ci)=>addNode(c.label,`n-c${bi}${ci}`,c.x*W,c.y*H,stage,'child',c.url||'',c.popup||null));
   });
 
   // Build parent→children map for descendant highlighting
@@ -1225,8 +1267,8 @@ function buildGraph(branches) {
     });
   }
 
-  stage.addEventListener('mousemove',e=>{
-    const r=stage.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top, thr=80;
+  document.addEventListener('mousemove',e=>{
+    const r=stage.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top, thr=120;
     clearHighlights();
     nodes.forEach(n=>{
       const d=Math.hypot(mx-n.x,my-n.y);
@@ -1249,14 +1291,14 @@ function buildGraph(branches) {
       }
     });
   });
-  stage.addEventListener('mouseleave', clearHighlights);
+  document.addEventListener('mouseleave', clearHighlights);
 
   // Organic proximity parallax — nodes float toward cursor with depth-based speed
   // Each node gets a unique drift multiplier so they move at slightly different rates
   nodes.forEach((n,i) => {
     n._drift = 0.85 + (i % 5) * 0.08; // 0.85 to 1.17 — organic variation
   });
-  stage.addEventListener('mousemove', e => {
+  document.addEventListener('mousemove', e => {
     const r = stage.getBoundingClientRect();
     const cx = e.clientX - r.left;
     const cy = e.clientY - r.top;
@@ -1271,14 +1313,14 @@ function buildGraph(branches) {
         const dx = (cx - n.x) / Math.max(dist, 1) * strength;
         const dy = (cy - n.y) / Math.max(dist, 1) * strength;
         el.style.transform = `translate(calc(-50% + ${dx.toFixed(2)}px), calc(-50% + ${dy.toFixed(2)}px))`;
-        el.style.transition = `transform ${(0.12 + n._drift * 0.08).toFixed(2)}s cubic-bezier(.25,.46,.45,.94)`;
+        el.style.transition = `transform 0.08s ease`;
       } else {
         el.style.transform = 'translate(-50%,-50%)';
-        el.style.transition = `transform ${(0.5 + n._drift * 0.2).toFixed(2)}s cubic-bezier(.25,.46,.45,.94)`;
+        el.style.transition = `transform 0.35s ease`;
       }
     });
   });
-  stage.addEventListener('mouseleave', () => {
+  document.addEventListener('mouseleave', () => {
     document.querySelectorAll('.learn-node').forEach(el => {
       el.style.transform = 'translate(-50%,-50%)';
       el.style.transition = 'transform .6s cubic-bezier(.25,.46,.45,.94)';
@@ -1293,13 +1335,14 @@ function addLine(svg,x1,y1,x2,y2,stroke,id) {
   l.setAttribute('stroke',stroke);l.setAttribute('stroke-width','.7');l.setAttribute('stroke-dasharray','3 4');
   svg.appendChild(l);
 }
-function addNode(label,id,x,y,container,type,url='') {
+function addNode(label,id,x,y,container,type,url='',popup=null) {
   const el=document.createElement('div');
   el.className=`learn-node ${type}`;el.id=id;
   el.style.left=(x/container.offsetWidth*100)+'%';
   el.style.top=(y/container.offsetHeight*100)+'%';
   el.innerHTML=`<span class="learn-label">${label}</span>`;
-  if(url){ el.style.cursor='pointer'; el.addEventListener('click',()=>window.open(url,'_blank')); }
+  if(popup){ el.style.cursor='pointer'; el.addEventListener('click',()=>openLearnPopup(popup)); }
+  else if(url){ el.style.cursor='pointer'; el.addEventListener('click',()=>window.open(url,'_blank')); }
   container.appendChild(el);
 }
 
@@ -1423,6 +1466,24 @@ function copyEmail(e) {
 if(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) && window.innerWidth < 768) {
   setTimeout(()=>{ document.getElementById('mobile-warn').classList.add('on'); }, 800);
 }
+
+/* ══ LEARN POPUP ══ */
+function openLearnPopup(p) {
+  const panel = document.getElementById('learn-popup');
+  document.getElementById('lp-title').textContent = p.title;
+  document.getElementById('lp-sub').textContent = p.sub || '';
+  document.getElementById('lp-text').innerHTML = p.text.split('\n\n').map(t=>`<p>${t}</p>`).join('');
+  const linkEl = document.getElementById('lp-link');
+  if(p.url){ linkEl.href=p.url; linkEl.style.display='inline-block'; }
+  else { linkEl.style.display='none'; }
+  panel.classList.add('on');
+}
+document.addEventListener('click', e=>{
+  const panel = document.getElementById('learn-popup');
+  if(!panel) return;
+  if(e.target.id==='lp-close' || e.target.id==='learn-popup')
+    panel.classList.remove('on');
+});
 
 </script>
 </body>
